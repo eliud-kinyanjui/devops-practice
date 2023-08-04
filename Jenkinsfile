@@ -1,6 +1,8 @@
 pipeline {
     environment {
         dockerimagename = 'elkingsparx/devops-practice'
+        VERSION = "${env.BUILD_ID}-${env.GIT_COMMIT}"
+        IMAGE = "${dockerimagename}:${VERSION}"
     }
 
     agent any
@@ -15,7 +17,7 @@ pipeline {
         stage('Build image') {
             steps {
                 script {
-                    dockerImage = docker.build dockerimagename
+                    dockerImage = docker.build IMAGE
                 }
             }
         }
