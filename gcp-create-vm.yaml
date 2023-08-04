@@ -1,0 +1,110 @@
+---
+- name: Create GCP Instance
+  hosts: localhost
+  gather_facts: false
+  vars:
+      gcp_project: devops-392517
+      gcp_cred_kind: serviceaccount
+      gcp_cred_file: devops-392517-eec121203cf6.json
+      zone: "us-central1-c"
+      region: "us-central1"
+      ip_cidr_range: 172.16.0.0/28
+      instance_name: devops-practice-ansible
+      machine_type: e2-small
+
+  tasks:
+   - name: Create VPC Network
+     gcp_compute_network:
+      name: devops-practice-ansible
+      auto_create_subnetworks: yes
+      project: "{{ gcp_project }}"
+      auth_kind: "{{ gcp_cred_kind }}"
+      service_account_file: "{{ gcp_cred_file }}"
+      state: present
+     register: network
+    
+   - name: Create subnet within above VPC network
+     gcp_compute_subnetwork:
+      name: devops-practice-ansible-subnet
+      region: "{{ region }}"
+      network: "{{ network }}"
+      ip_cidr_range: "{{ ip_cidr_range }}"
+      project: "{{ gcp_project }}"
+      auth_kind: "{{ gcp_cred_kind }}"
+      service_account_file: "{{ gcp_cred_file }}"
+      state: present
+     register: subnet
+
+   - name: Create firewall rule to allow port 80 & 22 for all source IPs
+     gcp_compute_firewall:
+      name: devops-practice-ansible-firewall
+      network: "{{ network }}"
+      allowed:
+      - ip_protocol: tcp
+        ports: ['80','22']
+      target_tags:
+        - gcp-ansible
+      source_ranges: ['0.0.0.0/0']
+      project: "{{ gcp_project }}"
+      auth_kind: "{{ gcp_cred_kind }}"
+      service_account_file: "{{ gcp_cred_file }}"
+      state: present
+     register: firewall
+    
+   - name: create a address
+     gcp_compute_address:
+         name: "{{ instance_name }}"
+         region: "{{ region }}"
+         project: "{{ gcp_project }}"
+         auth_kind: "{{ gcp_cred_kind }}"
+         service_account_file: "{{ gcp_cred_file }}"
+         scopes:
+           - https://www.googleapis.com/auth/compute
+         state: present
+     register: address
+
+   - name: create a disk
+     gcp_compute_disk:
+         name: "{{ instance_name }}"
+         size_gb: 30
+         source_image: 'projects/debian-cloud/global/images/debian-11-bullseye-v20230711'
+         zone: "{{ zone }}"
+         project: "{{ gcp_project }}"
+         auth_kind: "{{ gcp_cred_kind }}"
+         service_account_file: "{{ gcp_cred_file }}"
+         scopes:
+           - https://www.googleapis.com/auth/compute
+         state: present
+     register: disk
+
+   - name: Create new instance
+     gcp_compute_instance:
+      state: present
+      name: "{{ instance_name }}"
+      machine_type: "{{ machine_type }}"
+      disks:
+      - auto_delete: true
+        boot: true
+        source: "{{ disk }}"
+      network_interfaces:
+      - network: "{{ network }}"
+        subnetwork: "{{ subnet }}"
+        access_configs:
+        - name: External NAT
+          nat_ip: "{{ address }}"
+          type: ONE_TO_ONE_NAT
+      zone: "{{ zone }}"
+      tags:
+        items:
+          - devops-practice-ansible
+      project: "{{ gcp_project }}"
+      auth_kind: "{{ gcp_cred_kind }}"
+      service_account_file: "{{ gcp_cred_file }}"
+     register: instance
+
+   - name: Wait for SSH to come up
+     wait_for: host={{ address.address }} port=22 delay=10 timeout=60
+    
+   - name: Add host to groupname
+     add_host: hostname={{ address.address }} groupname=new_instances
+   
