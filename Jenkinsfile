@@ -1,7 +1,7 @@
 pipeline {
     environment {
         dockerimagename = 'elkingsparx/devops-practice'
-        VERSION = "${env.BUILD_ID}-${env.GIT_COMMIT}"
+        VERSION = "v1.0.${env.BUILD_ID}"
         IMAGE = "${dockerimagename}:${VERSION}"
     }
 
