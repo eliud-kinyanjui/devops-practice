@@ -30,6 +30,7 @@ pipeline {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
                         dockerImage.push('latest')
+                        dockerImage.push("${IMAGE}")
                     }
                 }
             }
