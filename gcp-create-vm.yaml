@@ -5,11 +5,11 @@
   vars:
       gcp_project: devops-392517
       gcp_cred_kind: serviceaccount
-      gcp_cred_file: devops-392517-eec121203cf6.json
+      gcp_cred_file: devops-392517-efdfbe1ef546.json
       zone: "us-central1-c"
       region: "us-central1"
       ip_cidr_range: 172.16.0.0/28
-      instance_name: devops-practice-ansible
+      instance_name: devops-practice-ansible2
       machine_type: e2-small
 
   tasks:
@@ -103,7 +103,7 @@
      register: instance
 
    - name: Wait for SSH to come up
-     wait_for: host={{ address.address }} port=22 delay=10 timeout=60
+     wait_for: host={{ address.address }} port=22 delay=40 timeout=60
     
    - name: Add host to groupname
      add_host: hostname={{ address.address }} groupname=new_instances
