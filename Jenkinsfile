@@ -3,6 +3,7 @@ pipeline {
         dockerimagename = 'elkingsparx/devops-practice'
         VERSION = "v1.0.${env.BUILD_ID}"
         IMAGE = "${dockerimagename}:${VERSION}"
+        CONTAINER_NAME = 'devops-container'
     }
 
     agent any
@@ -41,7 +42,19 @@ pipeline {
 
         stage('Run Docker Compose') {
             steps {
-                sh 'docker compose up -d'
+                script {
+                    containerStatus = sh(
+                        script: "docker inspect -f '{{ .State.Running }}' ${CONTAINER_NAME}",
+                        returnStatus: true
+                    ).trim()
+
+                    if (containerStatus == 'true') {
+                        sh 'docker compose down'
+                        sh 'docker compose up -d'
+                    } else {
+                        sh 'docker compose up -d'
+                    }
+                }
             }
         }
     }
