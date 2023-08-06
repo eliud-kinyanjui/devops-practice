@@ -29,9 +29,18 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
+                        dockerImage = docker.image(IMAGE)
+                        dockerImage.push()
+
+                        dockerImage.tag('latest')
                         dockerImage.push('latest')
                     }
                 }
+            }
+        }
+
+        stage('Run Docker Compose') {
+            steps {
             }
         }
     }
