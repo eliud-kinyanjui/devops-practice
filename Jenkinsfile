@@ -50,6 +50,7 @@ pipeline {
 
                     if (containerStatus == 'true') {
                         sh 'docker compose down'
+                        sleep 15
                         sh 'docker compose up -d'
                     } else {
                         sh 'docker compose up -d'
