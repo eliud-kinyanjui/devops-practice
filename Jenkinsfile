@@ -46,7 +46,7 @@ pipeline {
                     containerStatus = sh(
                         script: "docker inspect -f '{{ .State.Running }}' ${CONTAINER_NAME}",
                         returnStatus: true
-                    ).trim()
+                    )
 
                     if (containerStatus == 'true') {
                         sh 'docker compose down'
